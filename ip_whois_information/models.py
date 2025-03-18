@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class IPInfo(models.Model):
     handle = models.CharField(max_length=255, unique=True)
     whois_server = models.CharField(max_length=255, null=True, blank=True)
@@ -15,3 +16,15 @@ class IPInfo(models.Model):
 
     def __str__(self):
         return f"{self.organization} ({self.handle})"
+
+    def as_dict(self):
+        return {
+            "handle": self.handle,
+            "network": self.network_type,
+            "whois_server": self.whois_server,
+            "status": self.status,
+            "registration_date": self.registration_date,
+            "updated_date": self.updated_date,
+            "country": self.country,
+            "cidr_block": self.cidr_block
+        }

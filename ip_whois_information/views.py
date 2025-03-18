@@ -8,56 +8,60 @@ from django.http import HttpResponse, JsonResponse
 from django.views import View
 import re
 
-
-def index(request):
-    return HttpResponse
+from ip_whois_information.rdap_client import RDapClient
 
 
 class WhoisIpView(View):
-    SQL_QUERY = '''
+    SQL_QUERY = """
         SELECT handle, organization, whois_server, status,
                registration_date, updated_date, country,
                remarks, cidr_block
         FROM ip_whois_information_ipinfo
-        WHERE inet($1) <<= cidr_block;
-    '''
+        WHERE inet(%s) <<= cidr_block;
+    """
 
     def get(self, request, ip):
         try:
             if not ip:
-                return JsonResponse({'error': "Missing IP address"})
+                return JsonResponse({"error": "Missing IP address"})
             validate_ipv4_address(ip)
             ip_obj = ipaddress.ip_address(ip)
             network_info = self.__fetch_network_info(ip_obj)
-            return JsonResponse if network_info else self.__fetch_from_rdap(ip)
+            return self.__transform_response_to_json(network_info) if network_info else self.__fetch_from_rdap(ip)
 
         except Exception as e:
-            return self.__handle_caught_exceptions(e)
+            return JsonResponse({"error": str(e)})
 
-    def __fetch_from_rdap(self, ip):
-        pass
+    @classmethod
+    def __fetch_from_rdap(cls, ip):
+        rdap_data = RDapClient.fetch_rdap(ip)
+        if not rdap_data:
+            return JsonResponse({"error": "RDAP lookup failed"}, status=404)
+        return JsonResponse(rdap_data.as_dict())
 
-    def __fetch_network_info(self, ip_obj):
+    @classmethod
+    def __fetch_network_info(cls, ip_obj):
         with connection.cursor() as cursor:
-            cursor.execute(self.SQL_QUERY, [str(ip_obj)])
+            cursor.execute(cls.SQL_QUERY, [str(ip_obj)])
             return cursor.fetchone()
 
     @staticmethod
     def __transform_response_to_json(response):
-        return JsonResponse({
-            "handle": response[0],
-            "network": response[1],
-            "whois_server": response[2],
-            "status": response[3],
-            "registration_date": response[4],
-            "updated_date": response[5],
-            "country": response[6],
-            "remarks": response[7],
-            "cidr_block": response[8],
-        })
+        return JsonResponse(
+            {
+                "handle": response[0],
+                "network": response[1],
+                "whois_server": response[2],
+                "status": response[3],
+                "registration_date": response[4],
+                "updated_date": response[5],
+                "country": response[6],
+                "cidr_block": response[8],
+            }
+        )
 
-    @staticmethod
-    def __handle_caught_exceptions(e):
-        match e:
-            case builtins.ValueError:
-                return JsonResponse({'error': 'Invalid IP address'}, status=400)
+    # @staticmethod
+    # def __handle_caught_exceptions(e):
+    #     match e:
+    #         case builtins.ValueError:
+    #             return JsonResponse({"error": "Invalid IP address"}, status=400)
