@@ -4,7 +4,7 @@ import json
 
 from django.core.validators import validate_ipv4_address
 from django.db import connection
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.views import View
 import re
 
@@ -15,9 +15,9 @@ class WhoisIpView(View):
     SQL_QUERY = """
         SELECT handle, organization, whois_server, status,
                registration_date, updated_date, country,
-               remarks, cidr_block
+               start_ip, end_ip
         FROM ip_whois_information_ipinfo
-        WHERE inet(%s) <<= cidr_block;
+        WHERE inet(%s) BETWEEN start_ip AND end_ip
     """
 
     def get(self, request, ip):
@@ -56,7 +56,8 @@ class WhoisIpView(View):
                 "registration_date": response[4],
                 "updated_date": response[5],
                 "country": response[6],
-                "cidr_block": response[8],
+                "start_ip": response[7],
+                "end_ip": response[8]
             }
         )
 

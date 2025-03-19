@@ -1,6 +1,7 @@
 from django.core.validators import validate_ipv4_address
 from requests import get
 from ip_whois_information.models import IPInfo
+import ipaddress
 
 
 class RDapClient:
@@ -15,8 +16,7 @@ class RDapClient:
 
     @staticmethod
     def __create_ip_info_from_json_response(json_response):
-        cidr0_cidr = json_response.get("cidr0_cidrs")[0]
-        cidr_block = f"{cidr0_cidr['v4prefix']}/{cidr0_cidr['length']}"
+        start_ip, end_ip = map(ipaddress.IPv4Address, json_response.get("handle").split(" - "))
         return IPInfo(
             handle=json_response.get("handle"),
             whois_server=json_response.get("port43"),
@@ -49,5 +49,6 @@ class RDapClient:
                 "",
             ),
             remarks=[remark["description"] for remark in json_response.get("remarks")],
-            cidr_block=cidr_block,
+            start_ip=str(start_ip),
+            end_ip=str(end_ip),
         )
