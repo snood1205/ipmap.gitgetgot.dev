@@ -27,7 +27,11 @@ class WhoisIpView(View):
             validate_ipv4_address(ip)
             ip_obj = ipaddress.ip_address(ip)
             network_info = self.__fetch_network_info(ip_obj)
-            return self.__transform_response_to_json(network_info) if network_info else self.__fetch_from_rdap(ip)
+            return (
+                self.__transform_response_to_json(network_info)
+                if network_info
+                else self.__fetch_from_rdap(ip)
+            )
 
         except Exception as e:
             return JsonResponse({"error": str(e)})
@@ -57,12 +61,6 @@ class WhoisIpView(View):
                 "updated_date": response[5],
                 "country": response[6],
                 "start_ip": response[7],
-                "end_ip": response[8]
+                "end_ip": response[8],
             }
         )
-
-    # @staticmethod
-    # def __handle_caught_exceptions(e):
-    #     match e:
-    #         case builtins.ValueError:
-    #             return JsonResponse({"error": "Invalid IP address"}, status=400)

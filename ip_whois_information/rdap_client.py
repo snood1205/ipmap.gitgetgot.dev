@@ -16,7 +16,9 @@ class RDapClient:
 
     @staticmethod
     def __create_ip_info_from_json_response(json_response):
-        start_ip, end_ip = map(ipaddress.IPv4Address, json_response.get("handle").split(" - "))
+        start_ip, end_ip = map(
+            ipaddress.IPv4Address, json_response.get("handle").split(" - ")
+        )
         return IPInfo(
             handle=json_response.get("handle"),
             whois_server=json_response.get("port43"),
