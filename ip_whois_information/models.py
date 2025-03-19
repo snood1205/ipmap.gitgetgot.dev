@@ -12,7 +12,8 @@ class IPInfo(models.Model):
     country = models.CharField(max_length=10, null=True, blank=True)
     ref_url = models.CharField(max_length=255, null=True, blank=True)
     remarks = models.JSONField(null=True, blank=True)
-    cidr_block = models.GenericIPAddressField(unique=True)
+    start_ip = models.GenericIPAddressField()
+    end_ip = models.GenericIPAddressField()
 
     def __str__(self):
         return f"{self.organization} ({self.handle})"
@@ -26,5 +27,4 @@ class IPInfo(models.Model):
             "registration_date": self.registration_date,
             "updated_date": self.updated_date,
             "country": self.country,
-            "cidr_block": self.cidr_block
         }
